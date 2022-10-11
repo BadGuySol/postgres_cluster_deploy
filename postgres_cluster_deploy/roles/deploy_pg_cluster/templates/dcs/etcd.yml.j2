@@ -1,0 +1,8 @@
+# Тут надо поля разобрать детальней. Возможно для трех нод кластера etcd конфиг должен выглядеть иначе
+ETCD_LISTEN_PEER_URLS="http://{{ ansible_hostname }}:2380"
+ETCD_LISTEN_CLIENT_URLS="http://localhost:2379,http://{{ ansible_hostname }}:2379"
+ETCD_INITIAL_ADVERTISE_PEER_URLS="http://{{ ansible_hostname }}:2380"
+ETCD_INITIAL_CLUSTER="default=http://{{ ansible_hostname }}:2380"
+ETCD_ADVERTISE_CLIENT_URLS="http://{{ ansible_hostname }}:2379"
+ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster"
+ETCD_INITIAL_CLUSTER_STATE="new"

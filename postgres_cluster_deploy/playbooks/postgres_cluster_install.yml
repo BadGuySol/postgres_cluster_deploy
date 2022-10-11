@@ -1,0 +1,12 @@
+---
+
+- name: Deploy PG HA Cluster
+  hosts: cluster
+  become: yes
+  vars:     
+    patroni_scope: "postgres"
+  roles:
+    - role: deploy_pg_cluster
+
+...
+  

@@ -1,0 +1,99 @@
+
+- name: Install required packages for postgresql & patroni
+  apt:
+    pkg:
+      - wget
+      - python3-psycopg2
+      - acl
+      - python3 
+      - python3-pip
+      - etcd
+    update_cache: yes
+    state: latest
+
+- name: Install patroni required python modules, patroni, etcd
+  pip:
+    name: 
+      - testresources
+      - setuptools
+      - psycopg2
+      - patroni
+      #- python-etcd
+    extra_args: --user # Создает переменную home для выполняющего пользователя
+
+- name: Set up Postgres 14 repo
+  shell: |
+    echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list
+    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+  args:
+    warn: no
+
+- name: Install postgresql
+  apt:
+    name: postgresql-14
+    update_cache: yes
+  notify:
+    - Enable Postgresql
+
+- name: Stop postgresql  
+  service:
+    name: postgresql
+    state: stopped
+
+- name: Create symbolic link for patroni
+  file:
+    src: "/usr/lib/postgresql/14/bin/*"
+    dest: "/usr/sbin/"
+    state: link
+
+- name: Generate conf file "/etc/patroni/patroni.yml"
+  template:
+    src: templates/patroni.yml.j2
+    dest: /etc/patroni/patroni.yml
+    owner: postgres
+    group: postgres
+    mode: "0640"
+
+- name: Create "/data/patroni" directory if it does not exist
+  file:
+    path: /data/patroni    
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: "0700"
+
+- name: Copy systemd service file "/etc/systemd/system/patroni.service"
+  template:
+    src: templates/patroni.service.j2
+    dest: /etc/systemd/system/patroni.service
+    owner: postgres
+    group: postgres
+    mode: "0644"
+
+- name: Copy etcd service file "/etc/default/etcd"
+  template:
+    src: /etc/default/etcd.yml.j2
+    dest: /etc/default/etcd
+    owner: postgres
+    group: postgres
+    mode: "0644"    
+
+- name: Stop postgresql  
+  service:
+    name: etcd
+    state: restarted
+
+- name: Add the softdog module
+  modprobe:
+    name: softdog
+    state: present
+
+- name: Change watchdog folder owner
+  file:
+    path: /dev/watchdog
+    owner: postgres
+
+- name: Start patroni service
+  service:
+    name: patroni
+    state: started
